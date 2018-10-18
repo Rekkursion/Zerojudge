@@ -2,6 +2,7 @@
 
 int main () {
 	int n, m, firstRow, restRow;
+	
 	scanf("%d %d", &n, &m);
 	
 	firstRow = 6 + ((m - 1) * 4);
