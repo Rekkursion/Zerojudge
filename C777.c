@@ -1,6 +1,6 @@
 #include <stdio.h>
 #define MAXN 2018
-#define MAX_NUM 1000000000000000001
+#define MAX_NUM 1000000000000000000
 unsigned long long seq[MAXN];
 
 int dp();
