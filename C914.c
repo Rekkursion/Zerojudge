@@ -20,7 +20,6 @@ int main () {
 	}
 	
 	scanf("%d", &k);
-	
 	while(k--) {
 		scanf("%d", &n);
 		printf("%llu\n", total[n]);
