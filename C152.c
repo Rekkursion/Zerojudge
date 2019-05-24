@@ -144,7 +144,6 @@ inline void solve() {
 	newQHeadNode->idx = srcIdx;
 	newQHeadNode->next = NULL;
 
-	// bfs for X
 	qhead = newQHeadNode;
 	qtail = newQHeadNode;
 	graph[srcIdx].reachCost_dis = 0;
@@ -166,11 +165,18 @@ inline void solve() {
 			p = p->next;
 		}
 
+		QueueNode* qt = qhead;
 		qhead = qhead->next;
+		free(qt);
 	}
 	printNonNegativeInt(&(graph[dstIdx].reachCost_dis)), putchar(' ');
 
-	// bfs for Y
+	// =====================================================================
+
+	newQHeadNode = (QueueNode*)malloc(sizeof(QueueNode));
+	newQHeadNode->idx = srcIdx;
+	newQHeadNode->next = NULL;
+
 	qhead = newQHeadNode;
 	qtail = newQHeadNode;
 	graph[srcIdx].reachCost_time = 0.0;
