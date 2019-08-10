@@ -407,16 +407,16 @@ void differential() {
 					strcpy(weifened, "("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "-"), strcat(weifened, getBSTNode(b)->value), strcat(weifened, ")");
 					break;
 				case '*':
-					strcpy(pushee, "("), strcat(pushee, a), strcat(pushee, "*"), strcat(pushee, b), strcat(pushee, ")");
-					strcpy(weifened, "("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "*"), strcat(weifened, b), strcat(weifened, "+"), strcat(weifened, a), strcat(weifened, "*"), strcat(weifened, getBSTNode(b)->value), strcat(weifened, ")");
+					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")*("), strcat(pushee, b), strcat(pushee, "))");
+					strcpy(weifened, "(("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, ")*("), strcat(weifened, b), strcat(weifened, ")+("), strcat(weifened, a), strcat(weifened, ")*("), strcat(weifened, getBSTNode(b)->value), strcat(weifened, "))");
 					break;
 				case '/':
-					strcpy(pushee, "("), strcat(pushee, a), strcat(pushee, "/"), strcat(pushee, b), strcat(pushee, ")");
-					strcpy(weifened, "(("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "*"), strcat(weifened, b), strcat(weifened, "-"), strcat(weifened, a), strcat(weifened, "*"), strcat(weifened, getBSTNode(b)->value), strcat(weifened, ")/("), strcat(weifened, b), strcat(weifened, "^2))");
+					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")/("), strcat(pushee, b), strcat(pushee, "))");
+					strcpy(weifened, "((("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, ")*("), strcat(weifened, b), strcat(weifened, ")-("), strcat(weifened, a), strcat(weifened, ")*("), strcat(weifened, getBSTNode(b)->value), strcat(weifened, "))/(("), strcat(weifened, b), strcat(weifened, ")^2))");
 					break;
 				case '^':
-					strcpy(pushee, "("), strcat(pushee, a), strcat(pushee, "^"), strcat(pushee, b), strcat(pushee, ")");
-					strcpy(weifened, "("), strcat(weifened, b), strcat(weifened, "*"), strcat(weifened, a), strcat(weifened, "^("), strcat(weifened, b), strcat(weifened, "-1)*"), strcat(weifened, getBSTNode(a)->value), strcat(weifened, ")");
+					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")^("), strcat(pushee, b), strcat(pushee, "))");
+					strcpy(weifened, "(("), strcat(weifened, b), strcat(weifened, ")*("), strcat(weifened, a), strcat(weifened, ")^(("), strcat(weifened, b), strcat(weifened, ")-1)*("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "))");
 					break;
 			}
 
