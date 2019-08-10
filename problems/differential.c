@@ -1,10 +1,11 @@
 #pragma warning (disable:4996)
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #define MAXL 100001
 #define MAX_ELE_COUNT 1001
-#define MAX_ELE_LEN 222
+#define MAX_ELE_LEN 1001
 #define islowercasechar(c) ((c) >= 97 && (c) <= 122)
 #define isuppercasechar(c) ((c) >= 65 && (c) <= 90)
 #define isalphabetchar(c) (islowercasechar(c) || isuppercasechar(c))
@@ -34,6 +35,7 @@ void removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation();
 void assureTheCorrectnessOfAssociativitiesOfCifangOperations();
 void toPostfix();
 void differential();
+bool hasVarWhichIsGoingToBeWeifenedIn(char*);
 
 int string2Int(char*);
 double string2Double(char*);
@@ -402,21 +404,61 @@ void differential() {
 					strcpy(pushee, "("), strcat(pushee, a), strcat(pushee, "+"), strcat(pushee, b), strcat(pushee, ")");
 					strcpy(weifened, "("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "+"), strcat(weifened, getBSTNode(b)->value), strcat(weifened, ")");
 					break;
+
 				case '-':
 					strcpy(pushee, "("), strcat(pushee, a), strcat(pushee, "-"), strcat(pushee, b), strcat(pushee, ")");
 					strcpy(weifened, "("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "-"), strcat(weifened, getBSTNode(b)->value), strcat(weifened, ")");
 					break;
+
 				case '*':
 					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")*("), strcat(pushee, b), strcat(pushee, "))");
 					strcpy(weifened, "(("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, ")*("), strcat(weifened, b), strcat(weifened, ")+("), strcat(weifened, a), strcat(weifened, ")*("), strcat(weifened, getBSTNode(b)->value), strcat(weifened, "))");
 					break;
+
 				case '/':
 					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")/("), strcat(pushee, b), strcat(pushee, "))");
 					strcpy(weifened, "((("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, ")*("), strcat(weifened, b), strcat(weifened, ")-("), strcat(weifened, a), strcat(weifened, ")*("), strcat(weifened, getBSTNode(b)->value), strcat(weifened, "))/(("), strcat(weifened, b), strcat(weifened, ")^2))");
 					break;
+
 				case '^':
+					// build pushee
 					strcpy(pushee, "(("), strcat(pushee, a), strcat(pushee, ")^("), strcat(pushee, b), strcat(pushee, "))");
-					strcpy(weifened, "(("), strcat(weifened, b), strcat(weifened, ")*("), strcat(weifened, a), strcat(weifened, ")^(("), strcat(weifened, b), strcat(weifened, ")-1)*("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "))");
+
+					// build weifened: 2 cases
+					// e.g. (3x)^(5x)
+					if (hasVarWhichIsGoingToBeWeifenedIn(b)) {
+						char orig[MAX_ELE_LEN];
+						strcpy(orig, "(("), strcat(orig, a), strcat(orig, ")^("), strcat(orig, b), strcat(orig, "))");
+
+						char restPart_l[MAX_ELE_LEN];
+						strcpy(restPart_l, "(("),
+							strcat(restPart_l, getBSTNode(a)->value),
+							strcat(restPart_l, ")/("),
+							strcat(restPart_l, a),
+							strcat(restPart_l, "))*("),
+							strcat(restPart_l, b),
+							strcat(restPart_l, ")");
+
+						char restPart_r[MAX_ELE_LEN];
+						strcpy(restPart_r, "ln("),
+							strcat(restPart_r, a),
+							strcat(restPart_r, ")*("),
+							strcat(restPart_r, getBSTNode(b)->value),
+							strcat(restPart_r, ")");
+
+						strcpy(weifened, "("),
+							strcat(weifened, orig),
+							strcat(weifened, "*("),
+							strcat(weifened, restPart_l),
+							strcat(weifened, "+"),
+							strcat(weifened, restPart_r),
+							strcat(weifened, "))");
+					}
+
+					// e.g. (3x)^(5)
+					else {
+						strcpy(weifened, "(("), strcat(weifened, b), strcat(weifened, ")*("), strcat(weifened, a), strcat(weifened, ")^(("), strcat(weifened, b), strcat(weifened, ")-1)*("), strcat(weifened, getBSTNode(a)->value), strcat(weifened, "))");
+					}
 					break;
 			}
 
@@ -450,6 +492,15 @@ void differential() {
 
 	strcpy(weifenedEquation, getBSTNode(stack[--stkTop])->value);
 	return;
+}
+
+bool hasVarWhichIsGoingToBeWeifenedIn(char* str) {
+	int len = strlen(str);
+	for (int k = 0; k < len; ++k) {
+		if (str[k] == variableWhichIsGoingToBeWeifened[0])
+			return true;
+	}
+	return false;
 }
 
 int string2Int(char* str) {
