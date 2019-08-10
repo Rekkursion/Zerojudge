@@ -31,6 +31,7 @@ void solve();
 
 void initOpPriorities();
 void removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation();
+void assureTheCorrectnessOfAssociativitiesOfCifangOperations();
 void toPostfix();
 void differential();
 
@@ -55,6 +56,7 @@ void solve() {
 	root = NULL;
 
 	removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation();
+	assureTheCorrectnessOfAssociativitiesOfCifangOperations();
 	initOpPriorities();
 	toPostfix();
 	differential();
@@ -123,6 +125,105 @@ void removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation() {
 
 	strcpy(equation, tmp);
 	eqLen = j;
+
+	return;
+}
+
+void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
+	char lhs[MAXL], rhs[MAXL], llhs[MAXL], rrhs[MAXL];
+	int parDepth = 0, i, j;
+
+	// numbers, operators, functions, variables, parentheses
+	for (int k = eqLen - 1; k >= 0; --k) {
+		if (equation[k] == '^') {
+
+			// get the left-side element
+			parDepth = 0;
+			for (i = k - 1; i >= 0; --i) {
+
+				// right parenthesis (including function)
+				if (equation[k - 1] == ')') {
+					if (equation[i] == ')')
+						++parDepth;
+					else if (equation[i] == '(') {
+						--parDepth;
+						if (parDepth == 0) {
+							if (i > 0 && (equation[i - 1] == 'n' || equation[i - 1] == 's' || equation[i - 1] == 't' || equation[i - 1] == 'c'))
+								i -= 3;
+							break;
+						}
+					}
+				}
+
+				// number
+				else if (isnumberchar(equation[k - 1]) || equation[k - 1] == '.') {
+					if (!isnumberchar(equation[i]) && equation[i] != '.') {
+						++i;
+						break;
+					}
+				}
+
+				// variable
+				else if (isxyzchar(equation[k - 1]))
+					break;
+			}
+			if (i < 0)
+				i = 0;
+			strncpy(lhs, equation + i, k - i);
+			strncpy(llhs, equation, i);
+			lhs[k - i] = 0;
+			llhs[i] = 0;
+
+			// get the right-side element
+			parDepth = 0;
+			for (j = k + 1; j < eqLen; ++j) {
+
+				// left parenthesis or function
+				if (equation[k + 1] == '(' || issctchar(equation[k + 1])) {
+					if (equation[j] == '(')
+						++parDepth;
+					else if (equation[j] == ')') {
+						--parDepth;
+						if (parDepth == 0)
+							break;
+					}
+				}
+
+				// number
+				else if (isnumberchar(equation[k + 1]) || equation[k + 1] == '.') {
+					if (!isnumberchar(equation[j]) && equation[j] != '.') {
+						--j;
+						break;
+					}
+				}
+
+				// variable
+				else if (isxyzchar(equation[k + 1]))
+					break;
+			}
+			if (j >= eqLen)
+				j = eqLen - 1;
+			strncpy(rhs, equation + k + 1, j - k);
+			strcpy(rrhs, equation + j + 1);
+			rhs[j - k] = 0;
+
+			printf("|%d|%d|%d|\n", i, k, j);
+
+			// combine among lhs, '^', and rhs. build a new equation
+			strcpy(equation, llhs);
+			strcat(equation, "(");
+			strcat(equation, lhs);
+			strcat(equation, "^");
+			strcat(equation, rhs);
+			strcat(equation, ")");
+			strcat(equation, rrhs);
+
+			eqLen = strlen(equation);
+			++k;
+			printf("||%s||\n", equation);
+		}
+	}
+
 
 	return;
 }
