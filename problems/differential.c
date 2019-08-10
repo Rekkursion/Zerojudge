@@ -167,7 +167,17 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 				// number
 				else if (isnumberchar(equation[k - 1]) || equation[k - 1] == '.') {
-					if (!isnumberchar(equation[i]) && equation[i] != '.' && equation[i] != 'E') {
+					// deal with scientific notation with sign, e.g. 3.4E+3, 1.32E-9
+					if (equation[i] == '+' || equation[i] == '-') {
+						if (i > 0 && equation[i - 1] == 'E')
+							--i;
+						else {
+							++i;
+							break;
+						}
+					}
+					// general situation
+					else if (!isnumberchar(equation[i]) && equation[i] != '.' && equation[i] != 'E') {
 						++i;
 						break;
 					}
@@ -201,10 +211,13 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 				}
 
 				// number
-				else if (isnumberchar(equation[checkIdx]) || equation[checkIdx] == '.') {
+				else if (isnumberchar(equation[checkIdx]) || equation[checkIdx] == '.' || equation[checkIdx] == 'E') {
 					if (!isnumberchar(equation[j]) && equation[j] != '.' && equation[j] != 'E') {
-						--j;
-						break;
+						if ((equation[j] == '+' || equation[j] == '-') && j > 0 && equation[j - 1] == 'E');
+						else {
+							--j;
+							break;
+						}
 					}
 				}
 
@@ -249,8 +262,11 @@ void toPostfix() {
 		// number
 		if (isnumberchar(ch) || ch == '.') {
 			int j = k;
-			while (j < eqLen && (isnumberchar(equation[j]) || equation[j] == '.' || equation[j] == 'E'))
+			while (j < eqLen && (isnumberchar(equation[j]) || equation[j] == '.' || equation[j] == 'E')) {
+				if (equation[j] == 'E' && (equation[j + 1] == '+' || equation[j + 1] == '-'))
+					++j;
 				++j;
+			}
 			strncpy(postfix[postfixIdx++], equation + k, j - k);
 			k = j - 1;
 		}
