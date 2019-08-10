@@ -186,10 +186,11 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 			// get the right-side element
 			parDepth = 0;
-			for (j = k + 1; j < eqLen; ++j) {
+			int checkIdx = equation[k + 1] == '+' || equation[k + 1] == '-' ? k + 2 : k + 1;
+			for (j = checkIdx; j < eqLen; ++j) {
 
 				// left parenthesis or function
-				if (equation[k + 1] == '(' || issctchar(equation[k + 1]) || equation[k + 1] == 'l') {
+				if (equation[checkIdx] == '(' || issctchar(equation[checkIdx]) || equation[checkIdx] == 'l') {
 					if (equation[j] == '(')
 						++parDepth;
 					else if (equation[j] == ')') {
@@ -200,7 +201,7 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 				}
 
 				// number
-				else if (isnumberchar(equation[k + 1]) || equation[k + 1] == '.') {
+				else if (isnumberchar(equation[checkIdx]) || equation[checkIdx] == '.') {
 					if (!isnumberchar(equation[j]) && equation[j] != '.' && equation[j] != 'E') {
 						--j;
 						break;
@@ -208,7 +209,7 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 				}
 
 				// variable or 'e'
-				else if (isxyzchar(equation[k + 1]) || isechar(equation[k + 1]))
+				else if (isxyzchar(equation[checkIdx]) || isechar(equation[checkIdx]))
 					break;
 			}
 			if (j >= eqLen)
@@ -217,7 +218,9 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 			strcpy(rrhs, equation + j + 1);
 			rhs[j - k] = 0;
 
+#ifdef QQ
 			printf("|%d|%d|%d|\n", i, k, j);
+#endif
 
 			// combine among lhs, '^', and rhs. build a new equation
 			strcpy(equation, llhs);
