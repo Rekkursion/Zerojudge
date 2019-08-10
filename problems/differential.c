@@ -10,6 +10,7 @@
 #define isuppercasechar(c) ((c) >= 65 && (c) <= 90)
 #define isalphabetchar(c) (islowercasechar(c) || isuppercasechar(c))
 #define isnumberchar(c) ((c) >= 48 && (c) <= 57)
+#define isechar(c) ((c) == 'e')
 #define isxyzchar(c) ((c) == 'x' || (c) == 'y' || (c) == 'z')
 #define issctchar(c) ((c) == 's' || (c) == 'c' || (c) == 't')
 //#define QQ
@@ -61,12 +62,12 @@ void solve() {
 	assureTheCorrectnessOfAssociativitiesOfCifangOperations();
 	initOpPriorities();
 	toPostfix();
-	differential();
 
 	puts("postfix: ");
 	for (int k = 0; k < postfixIdx; ++k)
 		printf("|%s", postfix[k]);
 	puts("|\n");
+	differential();
 
 	printf("weifened: \n|%s|\n", weifenedEquation);
 
@@ -108,18 +109,21 @@ void removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation() {
 	for (int i = 0; i < eqLen; ++i) {
 		tmp[j++] = equation[i];
 
-		// 括弧 數字 變數 三角函數 運算符
+		// 括弧 數字 變數 函數 運算符 自然指數
 		if (i + 1 < eqLen) {
 			char nextch = equation[i + 1];
 
-			// ')' * ['(' or number or variable or function]
-			if (equation[i] == ')' && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch)))
+			// ')' * ['(' or number or variable or function or 'e']
+			if (equation[i] == ')' && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
 				tmp[j++] = '*';
-			// number * ['(' or variable or function]
-			if ((isnumberchar(equation[i]) || equation[i] == '.') && (nextch == '(' || isxyzchar(nextch) || issctchar(nextch)))
+			// number * ['(' or variable or function or 'e']
+			if ((isnumberchar(equation[i]) || equation[i] == '.') && (nextch == '(' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
 				tmp[j++] = '*';
-			// variable * ['(' or number or variable or function]
-			if (isxyzchar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch)))
+			// variable * ['(' or number or variable or function or 'e']
+			if (isxyzchar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
+				tmp[j++] = '*';
+			// 'e' * ['(' or number or variable or function or 'e']
+			if (isechar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
 				tmp[j++] = '*';
 		}
 	}
@@ -150,7 +154,11 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 					else if (equation[i] == '(') {
 						--parDepth;
 						if (parDepth == 0) {
-							if (i > 0 && (equation[i - 1] == 'n' || equation[i - 1] == 's' || equation[i - 1] == 't' || equation[i - 1] == 'c'))
+							// function: ln (natural log)
+							if (i > 1 && equation[i - 1] == 'n' && equation[i - 2] == 'l')
+								i -= 2;
+							// function: trigonometrics
+							else if (i > 0 && (equation[i - 1] == 'n' || equation[i - 1] == 's' || equation[i - 1] == 't' || equation[i - 1] == 'c'))
 								i -= 3;
 							break;
 						}
@@ -159,14 +167,14 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 				// number
 				else if (isnumberchar(equation[k - 1]) || equation[k - 1] == '.') {
-					if (!isnumberchar(equation[i]) && equation[i] != '.') {
+					if (!isnumberchar(equation[i]) && equation[i] != '.' && equation[i] != 'E') {
 						++i;
 						break;
 					}
 				}
 
-				// variable
-				else if (isxyzchar(equation[k - 1]))
+				// variable or 'e'
+				else if (isxyzchar(equation[k - 1]) || isechar(equation[k - 1]))
 					break;
 			}
 			if (i < 0)
@@ -181,7 +189,7 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 			for (j = k + 1; j < eqLen; ++j) {
 
 				// left parenthesis or function
-				if (equation[k + 1] == '(' || issctchar(equation[k + 1])) {
+				if (equation[k + 1] == '(' || issctchar(equation[k + 1]) || equation[k + 1] == 'l') {
 					if (equation[j] == '(')
 						++parDepth;
 					else if (equation[j] == ')') {
@@ -193,14 +201,14 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 				// number
 				else if (isnumberchar(equation[k + 1]) || equation[k + 1] == '.') {
-					if (!isnumberchar(equation[j]) && equation[j] != '.') {
+					if (!isnumberchar(equation[j]) && equation[j] != '.' && equation[j] != 'E') {
 						--j;
 						break;
 					}
 				}
 
-				// variable
-				else if (isxyzchar(equation[k + 1]))
+				// variable or 'e'
+				else if (isxyzchar(equation[k + 1]) || isechar(equation[k + 1]))
 					break;
 			}
 			if (j >= eqLen)
@@ -226,7 +234,6 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 		}
 	}
 
-
 	return;
 }
 
@@ -239,7 +246,7 @@ void toPostfix() {
 		// number
 		if (isnumberchar(ch) || ch == '.') {
 			int j = k;
-			while (j < eqLen && (isnumberchar(equation[j]) || equation[j] == '.' || equation[j] == 'e' || equation[j] == 'E'))
+			while (j < eqLen && (isnumberchar(equation[j]) || equation[j] == '.' || equation[j] == 'E'))
 				++j;
 			strncpy(postfix[postfixIdx++], equation + k, j - k);
 			k = j - 1;
@@ -295,6 +302,11 @@ void toPostfix() {
 			}
 		}
 
+		// 'e'
+		else if (isechar(ch)) {
+			strcpy(postfix[postfixIdx++], "e");
+		}
+
 		// trigonometric function (sin/cos/tan/cot/sec/csc)
 		else if (ch == 's' || ch == 'c' || ch == 't') {
 			strcpy(stack[stkTop], "#");
@@ -317,6 +329,12 @@ void toPostfix() {
 			}
 
 			k += 3;
+		}
+
+		// ln (natural log)
+		else if (ch == 'l') {
+			strcpy(stack[stkTop++], "#ln");
+			k += 2;
 		}
 	}
 
@@ -341,6 +359,12 @@ void differential() {
 		else if (isxyzchar(postfix[k][0])) {
 			strcpy(stack[stkTop++], postfix[k]);
 			addBSTNode(postfix[k], strcmp(postfix[k], variableWhichIsGoingToBeWeifened) == 0 ? "1" : "0");
+		}
+
+		// 'e'
+		else if (isechar(postfix[k][0])) {
+			strcpy(stack[stkTop++], postfix[k]);
+			addBSTNode(postfix[k], "0");
 		}
 
 		// function
@@ -385,6 +409,12 @@ void differential() {
 			else if (strcmp(postfix[k], "#csc") == 0) {
 				strcpy(pushee, "csc("), strcat(pushee, funArg), strcat(pushee, ")");
 				strcpy(weifened, "(-csc("), strcat(weifened, funArg), strcat(weifened, ")*cot("), strcat(weifened, funArg), strcat(weifened, ")*("), strcat(weifened, getBSTNode(funArg)->value), strcat(weifened, "))");
+			}
+
+			// ln (natural log)
+			else if (strcmp(postfix[k], "#ln") == 0) {
+				strcpy(pushee, "ln("), strcat(pushee, funArg), strcat(pushee, ")");
+				strcpy(weifened, "(("), strcat(weifened, getBSTNode(funArg)->value), strcat(weifened, ")/("), strcat(weifened, funArg), strcat(weifened, "))");
 			}
 
 			strcpy(stack[stkTop++], pushee);
