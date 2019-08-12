@@ -6,8 +6,30 @@
 #include <stack>
 #include <map>
 #include <string>
+#include <cstring>
 #include <cmath>
+#include <exception>
 using namespace std;
+
+class EquationFormatException: exception { public: string msg; EquationFormatException(string _msg): msg(_msg) {} };
+class EvaluationException: exception { public: string msg; EvaluationException(string _msg): msg(_msg) {} };
+
+#define ERR_MSG_NULL_OUTPUT "輸出為空。"
+#define ERR_MSG_NO_OPERAND "輸出式子中沒有任何運算元（常數、變數等）。"
+#define ERR_MSG_ONLY_SINGLE_LINE_ALLOWED "請勿分行，每筆輸出只佔一行。"
+#define ERR_MSG_PARENTHESES "輸出式子的括號匹配不正確。"
+#define ERR_MSG_EQUATION_FORMAT "輸出式子的格式不正確。"
+#define ERR_MSG_ILLEGAL_NUMBER_FORMAT "輸出式子中的數字格式不正確。"
+#define ERR_MSG_ILLEGAL_SYMBOL "輸出式子中含有非法字符或字符串。"
+#define ERR_MSG_ILLEGAL_FORMAT_OF_E "科學記號中的 \'E\' 的兩側必須要有數字字符，如 3.5E+3、.2E-5、9.E1 等。"
+#define ERR_MSG_ILLEGAL_FORMAT_OF_FUNC_NO_PAR "在函數名稱的後面必須有一組函數括號。"
+#define ERR_MSG_ILLEGAL_FORMAT_OF_FUNC_ILLEGAL_POWER_SIGN "函數的次方符號必須寫在函數括號的後面，如 sin(x)^2 或 (sin(x))^2。"
+#define ERR_MSG_WRONG_RESULT "計算結果不正確。"
+#define ERR_MSG_DIVIDED_BY_ZERO "計算過程中出現除零。"
+#define ERR_MSG_NAN "計算過程中出現未定義的情況（如 0/0 等）。"
+#define ERR_MSG_IMAGINARY_NUMBER "計算過程中出現虛數。"
+#define ERR_MSG_OUT_OF_DOMAIN "計算過程中，函數的參數超出該函數的定義域。"
+#define ERR_MSG_OUT_OF_INF "計算過程中，函數的結果出現正或負無限。"
 
 #define islowercasechar(c) ((c) >= 97 && (c) <= 122)
 #define isuppercasechar(c) ((c) >= 65 && (c) <= 90)
@@ -17,14 +39,14 @@ using namespace std;
 #define isxyzchar(c) ((c) == 'x' || (c) == 'y' || (c) == 'z')
 #define issctchar(c) ((c) == 's' || (c) == 'c' || (c) == 't')
 
-#define ZERO_CHECK_THRESHOLD (0.01)
+#define ZERO_CHECK_THRESHOLD (1.0)
 #define abs(v) ((v) < 0 ? (-(v)) : (v))
 #define iszero(v) ((v) <= ZERO_CHECK_THRESHOLD)
 
 #define E 2.71828182845904523536
 
-#define MAXL 1001
-#define QQ
+#define MAXL 10001
+//#define QQ
 
 vector<string> systemInput;
 vector<string> systemOutput;
@@ -42,6 +64,7 @@ string preprocessEquation(string);
 vector<string> toPostfix(string);
 double evaluate(vector<string>, double, double, double);
 void setResult(string, int, string, string, string);
+double string2Double(string);
 
 int main(int argc, char* argv[]) {
 	if (argc != 4)
@@ -50,7 +73,13 @@ int main(int argc, char* argv[]) {
 	getThreeFilesContent(argv[1], argv[2], argv[3]);
 	initOpPriorities();
 	initResult();
-	doJudge();
+	try {
+		doJudge();
+	} catch (EquationFormatException e) {
+		setResult("WA", 1, userOutput.size() == 1 ? userOutput[0] : "", "", e.msg);
+	} catch (EvaluationException e) {
+		setResult("WA", 1, userOutput[0], "", e.msg);
+	}
 
 	for (map<string, string>::iterator it = result.begin(); it != result.end(); ++it)
 		printf("%s=%s\n", it->first.c_str(), it->second.c_str());
@@ -106,10 +135,11 @@ void initResult() {
 
 void doJudge() {
 	if (userOutput.size() == 0) {
-		setResult("WA", 1, "", "", "輸出為空。");
+		setResult("WA", 1, "", "", ERR_MSG_NULL_OUTPUT);
 		return;
-	} else if (userOutput.size() > 1) {
-		setResult("WA", 1, "", "", "請勿分行，每筆輸出只佔一行。");
+	}
+	else if (userOutput.size() > 1) {
+		setResult("WA", 1, "", "", ERR_MSG_ONLY_SINGLE_LINE_ALLOWED);
 		return;
 	}
 
@@ -127,10 +157,14 @@ void doJudge() {
 #endif
 
 		if (!iszero(abs(correctEvaluatedValue - userEvaluatedValue))) {
-			char userOutStr[MAXL], sysOutStr[MAXL];
+			char userOutStr[MAXL], sysOutStr[MAXL], xStr[MAXL], yStr[MAXL], zStr[MAXL];
 			sprintf(userOutStr, "%lf", userEvaluatedValue);
 			sprintf(sysOutStr, "%lf", correctEvaluatedValue);
-			setResult("WA", k + 1, userOutStr, sysOutStr, "計算結果不正確。");
+			sprintf(xStr, "%lf", x);
+			sprintf(yStr, "%lf", y);
+			sprintf(zStr, "%lf", z);
+
+			setResult("WA", k + 1, userOutStr, sysOutStr, ERR_MSG_WRONG_RESULT + string("該筆數據為：[x = ") + xStr + string(", y = ") + yStr + string(", z = ") + zStr + string("]。"));
 			return;
 		}
 	}
@@ -148,6 +182,9 @@ string preprocessEquation(string equation) {
 		if (equation[k] != ' ')
 			eq += equation[k];
 	}
+
+	if (eq.length() == 0)
+		throw EquationFormatException(ERR_MSG_NULL_OUTPUT);
 
 	// add omitted multiply-signs
 	string tmp = "";
@@ -168,8 +205,12 @@ string preprocessEquation(string equation) {
 			if (isxyzchar(eq[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
 				tmp += "*";
 			// 'e' * ['(' or number or variable or function or 'e']
-			if (isechar(eq[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
+			if (isechar(eq[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch))) {
+				// exclude the case of 'sec'
+				if (i > 0 && eq[i - 1] == 's')
+					continue;
 				tmp += "*";
+			}
 		}
 	}
 	eq = tmp;
@@ -180,6 +221,8 @@ string preprocessEquation(string equation) {
 	string lhs, rhs, llhs, rrhs;
 	for (k = eq.length() - 1; k >= 0; --k) {
 		if (eq[k] == '^') {
+			if (k == eq.length() - 1 || k == 0)
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT);
 	
 			// get the left-side element
 			parDepth = 0;
@@ -189,8 +232,13 @@ string preprocessEquation(string equation) {
 				if (eq[k - 1] == ')') {
 					if (eq[i] == ')')
 						++parDepth;
+
 					else if (eq[i] == '(') {
 						--parDepth;
+
+						if (parDepth < 0)
+							throw EquationFormatException(ERR_MSG_PARENTHESES);
+
 						if (parDepth == 0) {
 							// function: ln (natural log)
 							if (i > 1 && eq[i - 1] == 'n' && eq[i - 2] == 'l')
@@ -198,6 +246,9 @@ string preprocessEquation(string equation) {
 							// function: trigonometrics
 							else if (i > 0 && (eq[i - 1] == 'n' || eq[i - 1] == 's' || eq[i - 1] == 't' || eq[i - 1] == 'c'))
 								i -= 3;
+
+							if (i < 0)
+								throw EquationFormatException(ERR_MSG_ILLEGAL_SYMBOL);
 							break;
 						}
 					}
@@ -233,6 +284,8 @@ string preprocessEquation(string equation) {
 			// get the right-side element
 			parDepth = 0;
 			int checkIdx = eq[k + 1] == '+' || eq[k + 1] == '-' ? k + 2 : k + 1;
+			if (checkIdx >= eq.length())
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT);
 			for (j = checkIdx; j < eq.length(); ++j) {
 	
 				// left parenthesis or function
@@ -241,6 +294,8 @@ string preprocessEquation(string equation) {
 						++parDepth;
 					else if (eq[j] == ')') {
 						--parDepth;
+						if (parDepth < 0)
+							throw EquationFormatException(ERR_MSG_PARENTHESES);
 						if (parDepth == 0)
 							break;
 					}
@@ -283,7 +338,6 @@ vector<string> toPostfix(string equation) {
 	stack<string> stack;
 	vector<string> postfix;
 
-	postfix.clear();
 	for (int k = 0; k < eqLen; ++k) {
 		char ch = equation[k];
 		
@@ -309,6 +363,9 @@ vector<string> toPostfix(string equation) {
 				postfix.push_back(stack.top());
 				stack.pop();
 			}
+
+			if (stack.empty())
+				throw EquationFormatException(ERR_MSG_PARENTHESES);
 
 			// it was a function
 			if (!stack.empty() && stack.top()[0] == '#') {
@@ -358,36 +415,34 @@ vector<string> toPostfix(string equation) {
 		else if (isechar(ch))
 			postfix.push_back("e");
 		
-		// trigonometric function (sin/cos/tan/cot/sec/csc)
-		else if (ch == 's' || ch == 'c' || ch == 't') {
+		// trigonometric function (sin/cos/tan/cot/sec/csc) or natural logarithm (ln)
+		else if (ch == 's' || ch == 'c' || ch == 't' || ch == 'l') {
 			string funName = "#";
-		
-			switch (ch) {
-				// sin/sec
-				case 's': funName += equation[k + 1] == 'i' ? "sin" : "sec";
-					break;
-				// cos/cot/csc
-				case 'c':
-					switch (equation[k + 2]) {
-						case 's': funName += "cos"; break;
-						case 't': funName += "cot"; break;
-						case 'c': funName += "csc"; break;
-					}
-					break;
-				// tan
-				case 't': funName += "tan";
-					break;
+
+			int j = k;
+			while (j < eqLen && ((equation[j] >= 65 && equation[j] <= 90) || (equation[j] >= 97 && equation[j] <= 122))) {
+				funName += equation[j];
+				++j;
 			}
 
+			if (j >= eqLen)
+				throw EquationFormatException(ERR_MSG_ILLEGAL_FORMAT_OF_FUNC_NO_PAR);
+			if (equation[j] == '^')
+				throw EquationFormatException(ERR_MSG_ILLEGAL_FORMAT_OF_FUNC_ILLEGAL_POWER_SIGN);
+			if (equation[j] != '(')
+				throw EquationFormatException(ERR_MSG_ILLEGAL_FORMAT_OF_FUNC_NO_PAR);
+
 			stack.push(funName);
-			k += 3;
+			k = j;
 		}
-		
-		// ln (natural log)
-		else if (ch == 'l') {
-			stack.push("#ln");
-			k += 2;
-		}
+
+		// illegal format of 'E'
+		else if (ch == 'E')
+			throw EquationFormatException(ERR_MSG_ILLEGAL_FORMAT_OF_E);
+
+		// illegal character
+		else
+			throw EquationFormatException(ERR_MSG_ILLEGAL_SYMBOL);
 	}
 		
 	// if operator-stack still has some operators
@@ -407,15 +462,16 @@ vector<string> toPostfix(string equation) {
 }
 
 double evaluate(vector<string> postfix, double xVal, double yVal, double zVal) {
-	stack<double> stack;
+	if (postfix.size() == 0)
+		throw EquationFormatException(ERR_MSG_NO_OPERAND);
 
+	stack<double> stack;
 	for (int k = 0; k < postfix.size(); ++k) {
 		string obj = postfix[k];
 
 		// number
 		if (isnumberchar(obj[0]) || obj[0] == '.') {
-			double num;
-			sscanf(obj.c_str(), "%lf", &num);
+			double num = string2Double(obj);
 			stack.push(num);
 		}
 
@@ -435,10 +491,16 @@ double evaluate(vector<string> postfix, double xVal, double yVal, double zVal) {
 			stack.push(E);
 		}
 
-		// operator
+		// binary operator
 		else if (obj[0] == '+' || obj[0] == '-' || obj[0] == '*' || obj[0] == '/' || obj[0] == '^') {
+			if (stack.empty())
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT + string("找不到二元運算子的參數。"));
 			double b = stack.top(); stack.pop();
+
+			if (stack.empty())
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT + string("二元運算子需要兩個參數。"));
 			double a = stack.top(); stack.pop();
+
 			double ret;
 
 			switch (obj[0]) {
@@ -449,11 +511,34 @@ double evaluate(vector<string> postfix, double xVal, double yVal, double zVal) {
 				case '^': ret = pow(a, b); break;
 			}
 
+			if (isinf(ret))
+				throw EvaluationException(ERR_MSG_DIVIDED_BY_ZERO);
+			if (isnan(ret)) {
+				if (obj[0] == '/')
+					throw EvaluationException(ERR_MSG_NAN);
+				else
+					throw EvaluationException(ERR_MSG_IMAGINARY_NUMBER);
+			}
+
+			stack.push(ret);
+		}
+
+		// unary operator
+		else if (obj[0] == '\"' || obj[0] == '\'') {
+			if (stack.empty())
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT + string("找不到一元運算子（正負號）的參數。"));
+
+			double num = stack.top(); stack.pop();
+			double ret = obj[0] == '\'' ? (-num) : num;
+
 			stack.push(ret);
 		}
 
 		// function
 		else if (obj[0] == '#') {
+			if (stack.empty())
+				throw EquationFormatException(ERR_MSG_EQUATION_FORMAT + string("找不到函數的參數。"));
+
 			double arg = stack.top(); stack.pop();
 			double ret;
 
@@ -478,12 +563,30 @@ double evaluate(vector<string> postfix, double xVal, double yVal, double zVal) {
 			// csc
 			else if (!strcmp(obj.c_str(), "#csc"))
 				ret = 1.0 / sin(arg);
+			else
+				throw EquationFormatException(ERR_MSG_ILLEGAL_SYMBOL + string("不支持的函數名稱 \"" + obj.substr(1) + "\"。"));
+
+			if (isnan(ret))
+				throw EvaluationException(ERR_MSG_OUT_OF_DOMAIN);
+			if (isinf(ret))
+				throw EvaluationException(ERR_MSG_OUT_OF_INF);
 
 			stack.push(ret);
 		}
+
+		// illegal symbol
+		else
+			throw EquationFormatException(ERR_MSG_ILLEGAL_SYMBOL);
 	}
 
-	return stack.top();
+	if (stack.empty())
+		throw EquationFormatException(ERR_MSG_EQUATION_FORMAT);
+
+	double result = stack.top(); stack.pop();
+	if (!stack.empty())
+		throw EquationFormatException(ERR_MSG_EQUATION_FORMAT);
+
+	return result;
 }
 
 void setResult(string judgeResult, int lineCount, string userOut, string systemOut, string message) {
@@ -497,4 +600,31 @@ void setResult(string judgeResult, int lineCount, string userOut, string systemO
 	result["$MESSAGE"] = message;
 
 	return;
+}
+
+double string2Double(string str) {
+	int e_idx = str.find('E');
+	int e2_idx = str.find('E', e_idx + 1);
+	int dot_idx = str.find('.');
+	int dot2_idx = str.find('.', dot_idx + 1);
+
+	if (dot2_idx >= 0) {
+		if (dot_idx < e_idx && dot2_idx < e_idx)
+			throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("一個數字中只能有一個小數點。"));
+		else
+			throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("科學記號中的 \'E\' 的右側只能是整數。"));
+	}
+	if (e_idx >= 0 && dot_idx > e_idx)
+		throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("科學記號中的 \'E\' 的右側只能是整數。"));
+	if (e2_idx >= 0)
+		throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("過多的 \'E\'。"));
+	if (e_idx == str.length() - 1)
+		throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("科學記號中的 \'E\' 的右側必須有一個整數。"));
+	if (str[str.length() - 1] == '+' || str[str.length() - 1] == '-')
+		throw EquationFormatException(ERR_MSG_ILLEGAL_NUMBER_FORMAT + string("科學記號中的 \'E\' 的右側必須有一個整數，不能只有正負號。"));
+
+	double ret;
+	sscanf(str.c_str(), "%lf", &ret);
+
+	return ret;
 }
