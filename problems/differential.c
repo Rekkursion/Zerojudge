@@ -38,11 +38,6 @@ void toPostfix();
 void differential();
 bool hasVarWhichIsGoingToBeWeifenedIn(char*);
 
-int string2Int(char*);
-double string2Double(char*);
-
-char* int2String(int);
-
 BSTNode* newBSTNode(char*, char*);
 void addBSTNode(char*, char*);
 BSTNode* getBSTNode(char*);
@@ -344,7 +339,7 @@ void toPostfix() {
 				// sin/sec
 				case 's': strcat(stack[stkTop++], equation[k + 1] == 'i' ? "sin" : "sec");
 					break;
-				// cos/cot/csc
+					// cos/cot/csc
 				case 'c':
 					switch (equation[k + 2]) {
 						case 's': strcat(stack[stkTop++], "cos"); break;
@@ -352,7 +347,7 @@ void toPostfix() {
 						case 'c': strcat(stack[stkTop++], "csc"); break;
 					}
 					break;
-				// tan
+					// tan
 				case 't': strcat(stack[stkTop++], "tan");
 					break;
 			}
@@ -560,44 +555,6 @@ bool hasVarWhichIsGoingToBeWeifenedIn(char* str) {
 			return true;
 	}
 	return false;
-}
-
-int string2Int(char* str) {
-	int len = strlen(str);
-	int ret = 0;
-
-	for (int k = 0; k < len; ++k) {
-		char ch = str[k];
-		if (isnumberchar(ch))
-			ret = (ret * 10) + (ch - 48);
-	}
-
-	return ret;
-}
-
-double string2Double(char* str) {
-	// TODO: string to double
-	return 0.0;
-}
-
-char* int2String(int num) {
-	char reversed[MAX_ELE_LEN];
-	char ret[MAX_ELE_LEN];
-	int retIdx = 0;
-	
-	if (num < 0)
-		num *= -1;
-
-	while (num > 0) {
-		reversed[retIdx++] = (num % 10) + 48;
-		num /= 10;
-	}
-
-	for (int k = retIdx - 1; k >= 0; --k)
-		ret[retIdx - k - 1] = reversed[k];
-	ret[retIdx] = 0;
-
-	return ret;
 }
 
 BSTNode* newBSTNode(char* key, char* val) {
