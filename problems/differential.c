@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #define MAXL 100001
-#define MAX_ELE_COUNT 1001
-#define MAX_ELE_LEN 1001
+#define MAX_ELE_COUNT 10001
+#define MAX_ELE_LEN 10001
 #define islowercasechar(c) ((c) >= 97 && (c) <= 122)
 #define isuppercasechar(c) ((c) >= 65 && (c) <= 90)
 #define isalphabetchar(c) (islowercasechar(c) || isuppercasechar(c))
@@ -63,13 +63,16 @@ void solve() {
 	initOpPriorities();
 	toPostfix();
 
+#ifdef QQ
 	puts("postfix: ");
 	for (int k = 0; k < postfixIdx; ++k)
 		printf("|%s", postfix[k]);
 	puts("|\n");
+#endif
+
 	differential();
 
-	printf("weifened: \n|%s|\n", weifenedEquation);
+	printf("%s\n", weifenedEquation);
 
 	return;
 }
@@ -123,8 +126,12 @@ void removeSpacesAndAddOmittedMultiplySignsAndGetLengthOfEquation() {
 			if (isxyzchar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
 				tmp[j++] = '*';
 			// 'e' * ['(' or number or variable or function or 'e']
-			if (isechar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch)))
+			if (isechar(equation[i]) && (nextch == '(' || isnumberchar(nextch) || nextch == '.' || isxyzchar(nextch) || issctchar(nextch) || nextch == 'l' || isechar(nextch))) {
+				// exclude the case of 'sec'
+				if (i > 0 && equation[i - 1] == 's')
+					continue;
 				tmp[j++] = '*';
+			}
 		}
 	}
 	tmp[j] = 0;
@@ -246,7 +253,10 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 			eqLen = strlen(equation);
 			++k;
+
+#ifdef QQ
 			printf("||%s||\n", equation);
+#endif
 		}
 	}
 
@@ -657,7 +667,7 @@ void visitBST(BSTNode* r) {
 		return;
 
 	visitBST(r->left);
-	printf("[%s|%s]\n", r->key, r->value);
+	//printf("[%s|%s]\n", r->key, r->value);
 	visitBST(r->right);
 
 	return;
