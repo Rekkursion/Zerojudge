@@ -13,7 +13,6 @@
 #define isechar(c) ((c) == 'e')
 #define isxyzchar(c) ((c) == 'x' || (c) == 'y' || (c) == 'z')
 #define issctchar(c) ((c) == 's' || (c) == 'c' || (c) == 't')
-//#define QQ
 
 typedef struct bstnode {
 	struct bstnoode* left;
@@ -41,7 +40,6 @@ bool hasVarWhichIsGoingToBeWeifenedIn(char*);
 BSTNode* newBSTNode(char*, char*);
 void addBSTNode(char*, char*);
 BSTNode* getBSTNode(char*);
-void visitBST(BSTNode*);
 
 int main() {
 	scanf("%s %s", equation, variableWhichIsGoingToBeWeifened);
@@ -57,13 +55,6 @@ void solve() {
 	assureTheCorrectnessOfAssociativitiesOfCifangOperations();
 	initOpPriorities();
 	toPostfix();
-
-#ifdef QQ
-	puts("postfix: ");
-	for (int k = 0; k < postfixIdx; ++k)
-		printf("|%s", postfix[k]);
-	puts("|\n");
-#endif
 
 	differential();
 
@@ -233,10 +224,6 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 			strcpy(rrhs, equation + j + 1);
 			rhs[j - k] = 0;
 
-#ifdef QQ
-			printf("|%d|%d|%d|\n", i, k, j);
-#endif
-
 			// combine among lhs, '^', and rhs. build a new equation
 			strcpy(equation, llhs);
 			strcat(equation, "(");
@@ -248,10 +235,6 @@ void assureTheCorrectnessOfAssociativitiesOfCifangOperations() {
 
 			eqLen = strlen(equation);
 			++k;
-
-#ifdef QQ
-			printf("||%s||\n", equation);
-#endif
 		}
 	}
 
@@ -537,11 +520,6 @@ void differential() {
 				addBSTNode(pushee, weifened);
 			}
 		}
-
-#ifdef QQ
-		visitBST(root);
-		puts("---------------------");
-#endif
 	}
 
 	strcpy(weifenedEquation, getBSTNode(stack[--stkTop])->value);
@@ -617,15 +595,4 @@ BSTNode* getBSTNode(char* key) {
 
 	// key not found
 	return NULL;
-}
-
-void visitBST(BSTNode* r) {
-	if (r == NULL)
-		return;
-
-	visitBST(r->left);
-	//printf("[%s|%s]\n", r->key, r->value);
-	visitBST(r->right);
-
-	return;
 }
